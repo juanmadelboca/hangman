@@ -19,11 +19,15 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
-    _gameBloc = GameBloc()..add(GameRestarted());
+    _gameBloc = GameBloc()
+      ..add(GameRestarted());
     _gameBloc.listen((state) {
       switch (state.runtimeType) {
         case WinGame:
-          gameFinishedMenu(context);
+          gameFinishedMenu(context, "Win");
+          break;
+        case LostGame:
+          gameFinishedMenu(context, "Loose");
           break;
       }
     });
@@ -31,26 +35,31 @@ class _GamePageState extends State<GamePage> {
       backgroundColor: backgroundColor,
       body: Container(
           child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-        child: Column(
-          children: <Widget>[
-            Container(
-                height: 450,
-                alignment: Alignment.center,
-                child: Container(
-                  height: 350,
-                  child: FlareActor(
-                    "assets/hangman.flr",
-                    controller: _gameBloc.flareControls,
-                  ),
-                )),
-            Container(
-                height: 90,
-                alignment: Alignment.bottomCenter,
-                child: BlocBuilder<GameBloc, GameState>(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Container(
+                  height: 300,
+                  child: BlocBuilder<GameBloc, GameState>(
+                      bloc: _gameBloc,
+                      builder: (context, state) {
+                        switch (state.runtimeType) {
+                          case UpdateShownWord:
+                            return FlareActor(
+                        "assets/hangman.flr",
+                        controller: _gameBloc.flareControls,
+                        );
+                          default:
+                            return SizedBox();
+                        }
+                      }),
+                    //Image.asset('assets/' + _gameBloc.currentImage);
+                ),
+                BlocBuilder<GameBloc, GameState>(
                     bloc: _gameBloc,
                     condition: (GameState previous, GameState current) =>
-                        previous.runtimeType != WinGame,
+                    previous.runtimeType != WinGame,
                     builder: (context, state) {
                       switch (state.runtimeType) {
                         case UpdateShownWord:
@@ -62,43 +71,44 @@ class _GamePageState extends State<GamePage> {
                         default:
                           return SizedBox();
                       }
-                    })),
+                    }),
 
-            //Container(height: 310,),
-            Container(
-              height: 310,
-              child: GridView.builder(
-                itemBuilder: (context, position) {
-                  return Padding(
-                    padding: const EdgeInsets.all(2.0),
-                    child: GestureDetector(
-                      onTap: () =>
-                          _gameBloc.add(LetterPressed(alphabet[position])),
-                      child: Card(
-                        color: buttonColor,
-                        elevation: 2,
-                        child: Center(
-                          child: Text(
-                            alphabet[position].toUpperCase(),
-                            style: TextStyle(color: Colors.white, fontSize: 18),
+                //Container(height: 310,),
+                Container(
+                  height: 310,
+                  child: GridView.builder(
+                    itemBuilder: (context, position) {
+                      return Padding(
+                        padding: const EdgeInsets.all(2.0),
+                        child: GestureDetector(
+                          onTap: () =>
+                              _gameBloc.add(LetterPressed(alphabet[position])),
+                          child: Card(
+                            color: buttonColor,
+                            elevation: 2,
+                            child: Center(
+                              child: Text(
+                                alphabet[position].toUpperCase(),
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 18),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                },
-                itemCount: alphabet.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7),
-              ),
+                      );
+                    },
+                    itemCount: alphabet.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      )),
+          )),
     );
   }
 
-  void gameFinishedMenu(BuildContext context) {
+  void gameFinishedMenu(BuildContext context, String title) {
     Dialog simpleDialog = Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(4.0),
@@ -116,7 +126,7 @@ class _GamePageState extends State<GamePage> {
                 height: 150,
               ),
               Text(
-                "You win",
+                "You " + title,
                 style: TextStyle(color: Colors.white, fontSize: 26),
               ),
               SizedBox(
@@ -151,6 +161,7 @@ class _GamePageState extends State<GamePage> {
     );
 
     showDialog(
+      barrierDismissible: false,
         context: context, builder: (BuildContext context) => simpleDialog);
   }
 }

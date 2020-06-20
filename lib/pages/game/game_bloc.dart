@@ -1,6 +1,3 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,10 +7,11 @@ import 'game_event.dart';
 import 'game_state.dart';
 
 class GameBloc extends Bloc<GameEvent, GameState> {
-  List<String> pressedLetterList = [];
+  List<String> pressedLetters= [];
   List shownWord;
   String currentWord;
-  int lives = 6;
+  final int MAX_LIVES = 6;
+  int lives;
   FlareControls flareControls = FlareControls();
 
   @override
@@ -25,8 +23,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       case GameRestarted:
         SharedPreferences prefs = await SharedPreferences.getInstance();
         int wordCounter = (prefs.getInt('wordCounter') ?? 0);
-        flareControls.play("0");
-        lives = 6;
+        //flareControls.play('0');
+        lives = MAX_LIVES;
         currentWord = await getCurrentWord(wordCounter);
         shownWord = _generateShownWord(currentWord);
         yield UpdateShownWord();
@@ -34,7 +32,6 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
       case LetterPressed:
         String pressedLetter = (event as LetterPressed).letter;
-        pressedLetterList.add(pressedLetter);
         checkPressedWord(pressedLetter);
         yield UpdateShownWord();
         if (lives == 0) {
@@ -50,6 +47,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   }
 
   checkPressedWord(String letter) {
+    if(pressedLetters.contains(letter)){
+      return;
+    }
+    pressedLetters.add(letter);
     if (currentWord.contains(letter)) {
       for (int index = currentWord.indexOf(letter);
           index >= 0;
@@ -58,7 +59,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       }
     } else {
       lives--;
-      flareControls.play((6 - lives).toString());
+      //currentImage = 'untitled_' + (MAX_LIVES - lives).toString() + '.png';
+      flareControls.play((MAX_LIVES - lives).toString());
     }
   }
 
@@ -66,7 +68,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   Future<String> getCurrentWord(int wordCounter) async {
     String data = await rootBundle.loadString("assets/words.txt");
-    List<String> words = data.split('\r\n');
+    List<String> words = data.split('\n');
     words.map((word) => word.replaceAll('\n', ""));
     return words[wordCounter];
   }

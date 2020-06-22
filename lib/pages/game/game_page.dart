@@ -19,8 +19,8 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
-    _gameBloc = GameBloc()
-      ..add(GameRestarted());
+    String difficulty = ModalRoute.of(context).settings.arguments;
+    _gameBloc = GameBloc(difficulty)..add(GameRestarted());
     _gameBloc.listen((state) {
       switch (state.runtimeType) {
         case WinGame:
@@ -33,82 +33,72 @@ class _GamePageState extends State<GamePage> {
     });
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Container(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                Container(
-                  height: 300,
-                  child: BlocBuilder<GameBloc, GameState>(
-                      bloc: _gameBloc,
-                      builder: (context, state) {
-                        switch (state.runtimeType) {
-                          case UpdateShownWord:
-                            return FlareActor(
+      body: BlocBuilder<GameBloc, GameState>(
+          bloc: _gameBloc,
+          condition: (GameState previous, GameState current) =>
+          previous.runtimeType != WinGame,
+          builder: (context, state) {
+
+    switch (state.runtimeType) {
+      case UpdateShownWord:
+        return Container(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  Container(
+                      height: 300,
+                      child: FlareActor(
                         "assets/hangman.flr",
                         controller: _gameBloc.flareControls,
-                        );
-                          default:
-                            return SizedBox();
-                        }
-                      }),
-                    //Image.asset('assets/' + _gameBloc.currentImage);
-                ),
-                BlocBuilder<GameBloc, GameState>(
-                    bloc: _gameBloc,
-                    condition: (GameState previous, GameState current) =>
-                    previous.runtimeType != WinGame,
-                    builder: (context, state) {
-                      switch (state.runtimeType) {
-                        case UpdateShownWord:
-                          return Text(
-                            _gameBloc.shownWord?.join(" ").toString(),
-                            style: TextStyle(fontSize: 40, color: Colors.white),
-                          );
-                          break;
-                        default:
-                          return SizedBox();
-                      }
-                    }),
-
-                //Container(height: 310,),
-                Container(
-                  height: 310,
-                  child: GridView.builder(
-                    itemBuilder: (context, position) {
-                      return Padding(
-                        padding: const EdgeInsets.all(2.0),
-                        child: GestureDetector(
-                          onTap: () =>
-                              _gameBloc.add(LetterPressed(alphabet[position])),
-                          child: Card(
-                            color: buttonColor,
-                            elevation: 2,
-                            child: Center(
-                              child: Text(
-                                alphabet[position].toUpperCase(),
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                      )),
+                  Text(
+                    _gameBloc.shownWord?.join(" ").toString(),
+                    style: TextStyle(fontSize: 40, color: Colors.white),
+                  ),
+                  //Container(height: 310,),
+                  Container(
+                    height: 310,
+                    child: GridView.builder(
+                      itemBuilder: (context, position) {
+                        return Padding(
+                          padding: const EdgeInsets.all(2.0),
+                          child: GestureDetector(
+                            onTap: () =>
+                                _gameBloc.add(
+                                    LetterPressed(alphabet[position])),
+                            child: Card(
+                              color: _gameBloc.pressedLetters.contains(alphabet[position])?Colors.grey:buttonColor,
+                              elevation: 2,
+                              child: Center(
+                                child: Text(
+                                  alphabet[position].toUpperCase(),
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 18),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    itemCount: alphabet.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 7),
+                        );
+                      },
+                      itemCount: alphabet.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          )),
+                ],
+              ),
+            ));
+      default:
+        return SizedBox();
+    }
+        }
+      ),
     );
   }
 
-  void gameFinishedMenu(BuildContext context, String title) {
+  void gameFinishedMenu(BuildContext context, String title, GameState state) {
     Dialog simpleDialog = Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(4.0),
@@ -127,6 +117,10 @@ class _GamePageState extends State<GamePage> {
               ),
               Text(
                 "You " + title,
+                style: TextStyle(color: Colors.white, fontSize: 26),
+              ),
+              Text(
+                "The word was " + title,
                 style: TextStyle(color: Colors.white, fontSize: 26),
               ),
               SizedBox(
@@ -161,7 +155,8 @@ class _GamePageState extends State<GamePage> {
     );
 
     showDialog(
-      barrierDismissible: false,
-        context: context, builder: (BuildContext context) => simpleDialog);
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) => simpleDialog);
   }
 }

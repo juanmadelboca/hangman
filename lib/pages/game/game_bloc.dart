@@ -11,6 +11,10 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   List shownWord;
   String currentWord;
   final int MAX_LIVES = 6;
+  final String difficulty;
+
+  GameBloc(this.difficulty);
+
   int lives;
   FlareControls flareControls = FlareControls();
 
@@ -23,8 +27,8 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       case GameRestarted:
         SharedPreferences prefs = await SharedPreferences.getInstance();
         int wordCounter = (prefs.getInt('wordCounter') ?? 0);
-        //flareControls.play('0');
         lives = MAX_LIVES;
+        flareControls.play((MAX_LIVES - lives).toString());
         currentWord = await getCurrentWord(wordCounter);
         shownWord = _generateShownWord(currentWord);
         yield UpdateShownWord();
@@ -35,12 +39,15 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         checkPressedWord(pressedLetter);
         yield UpdateShownWord();
         if (lives == 0) {
-          yield LostGame();
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          int wordCounter = (prefs.getInt('wordCounter') ?? 0) + 1;
+          await prefs.setInt('wordCounter', wordCounter);
+          yield LostGame(currentWord);
         } else if (!shownWord.contains("_")) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           int wordCounter = (prefs.getInt('wordCounter') ?? 0) + 1;
           await prefs.setInt('wordCounter', wordCounter);
-          yield WinGame();
+          yield WinGame(currentWord);
         }
         break;
     }
@@ -67,7 +74,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   checkGameStatus() {}
 
   Future<String> getCurrentWord(int wordCounter) async {
-    String data = await rootBundle.loadString("assets/words.txt");
+    String data = await rootBundle.loadString("assets/$difficulty.txt");
     List<String> words = data.split('\n');
     words.map((word) => word.replaceAll('\n', ""));
     return words[wordCounter];

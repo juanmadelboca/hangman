@@ -6,6 +6,8 @@ class MenuPage extends StatefulWidget {
 }
 
 class _MenuPageState extends State<MenuPage> {
+  String difficulty = 'hard';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -14,9 +16,13 @@ class _MenuPageState extends State<MenuPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Center(
-            child: RaisedButton(onPressed: () {
-              Navigator.of(context).pushReplacementNamed('/GamePage');
-            },child: Text("Play"),),
+            child: RaisedButton(
+              onPressed: () {
+                Navigator.of(context)
+                    .pushReplacementNamed('/GamePage', arguments: difficulty);
+              },
+              child: Text("Play"),
+            ),
           )
         ],
       ),
